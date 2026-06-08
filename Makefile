@@ -1,35 +1,26 @@
-NASM  = nasm
-CC    = i686-elf-gcc
-LD    = i686-elf-ld
-QEMU  = qemu-system-x86_64
+NASM = nasm
+QEMU = qemu-system-x86_64
 
-CFLAGS  = -ffreestanding -fno-builtin -fno-stack-protector -nostdlib -m32 -O0 -g
-LDFLAGS = --oformat binary -T linker.ld
-
-OBJ = hal/vga.o kernel/kernel.o
+BUILD     = build
+BOOT_BIN  = $(BUILD)/bootloader/boot.bin
+IMG       = $(BUILD)/os.img
 
 .PHONY: all run clean
 
-all: os.img
+all: $(IMG)
 
-bootloader/boot.bin: bootloader/boot.asm
+$(BUILD)/bootloader:
+	mkdir -p $@
+
+$(BOOT_BIN): bootloader/boot.asm | $(BUILD)/bootloader
 	$(NASM) -f bin $< -o $@
 
-hal/%.o: hal/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+$(IMG): $(BOOT_BIN)
+	cp $(BOOT_BIN) $@
+	dd if=/dev/zero bs=512 count=2879 >> $@ 2>/dev/null
 
-kernel/%.o: kernel/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-kernel.bin: $(OBJ) linker.ld
-	$(LD) $(LDFLAGS) $(OBJ) -o $@
-
-os.img: bootloader/boot.bin kernel.bin
-	cat bootloader/boot.bin kernel.bin > $@
-	truncate -s %512 $@
-
-run: os.img
-	$(QEMU) -drive format=raw,file=os.img -display curses
+run: $(IMG)
+	$(QEMU) -drive format=raw,file=$(IMG),if=floppy -boot a
 
 clean:
-	rm -f bootloader/boot.bin hal/*.o kernel/*.o kernel.bin os.img
+	rm -rf $(BUILD)

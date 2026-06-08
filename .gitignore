@@ -1,0 +1,25 @@
+# Build output
+build/
+
+# Object files
+*.o
+*.bin
+*.img
+
+# Linker artifacts
+*.map
+*.ld.bak
+
+# Editor artifacts
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
