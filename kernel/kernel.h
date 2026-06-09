@@ -11,4 +11,11 @@ void idt_init(void);
 #include "idt.h"
 void isr_handler(registers_t *regs);
 
+#include "pic.h"
+void pic_remap(unsigned char offset1, unsigned char offset2);
+void pic_mask(unsigned char irq);
+void pic_unmask(unsigned char irq);
+void pic_eoi(unsigned char irq);
+void pic_disable(void);
+
 #endif

@@ -13,7 +13,7 @@ DATA_SEG       equ 0x10
 ; =============================================================================
 start:
     cli
-    mov [boot_drive], dl    ; preserve BIOS boot drive
+    mov [boot_drive], dl
     xor ax, ax
     mov ds, ax
     mov es, ax
@@ -21,8 +21,8 @@ start:
     mov gs, ax
     mov ss, ax
     mov sp, STACK_BASE
-    cld                     ; forward direction for string ops
-    jmp 0x0000:main         ; far jump — flush CS
+    cld
+    jmp 0x0000:main
 
 main:
     sti
