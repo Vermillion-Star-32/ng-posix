@@ -14,11 +14,27 @@ void kernel_main(void) {
     pic_disable();
     vga_print("PIC OK\n");
 
-    vga_print("Running in 32-bit protected mode.\n");
+    vga_print("Initialising IRQs...\n");
+    irq_init();
+    vga_print("IRQ OK\n");
+
+    vga_print("Initialising keyboard...\n");
+    keyboard_init();
+    vga_print("Keyboard OK\n");
+
+    vga_print("Ready. Type below:\n> ");
 
     __asm__ volatile ("sti");
 
     for (;;) {
+        char c = keyboard_getchar();
+        if (c) {
+            if (c == '\r' || c == '\n') {
+                vga_print("\n> ");
+            } else {
+                vga_putchar(c);
+            }
+        }
         __asm__ volatile ("hlt");
     }
 }

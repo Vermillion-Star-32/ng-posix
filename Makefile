@@ -12,9 +12,11 @@ LDFLAGS = --oformat binary -T linker.ld -Map $(BUILD)/kernel.map
 OBJ = $(BUILD)/kernel/entry.o     	\
       $(BUILD)/hal/vga.o           	\
       $(BUILD)/hal/isr_stub.o      	\
+	  $(BUILD)/hal/keyboard.o      	\
       $(BUILD)/kernel/idt.o        	\
       $(BUILD)/kernel/isr.o        	\
 	  $(BUILD)/kernel/pic.o        	\
+	  $(BUILD)/kernel/irq.o        	\
       $(BUILD)/kernel/kernel.o
 
 .PHONY: all run clean
