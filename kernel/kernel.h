@@ -6,4 +6,9 @@ void vga_putchar(char c);
 void vga_print(const char *str);
 void vga_print_hex(unsigned int n);
 
+void idt_init(void);
+
+#include "idt.h"
+void isr_handler(registers_t *regs);
+
 #endif

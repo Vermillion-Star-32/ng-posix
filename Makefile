@@ -9,8 +9,11 @@ IMG     = $(BUILD)/os.img
 CFLAGS  = -ffreestanding -fno-builtin -fno-stack-protector -nostdlib -m32 -O0 -g
 LDFLAGS = --oformat binary -T linker.ld -Map $(BUILD)/kernel.map
 
-OBJ = $(BUILD)/kernel/entry.o \
-      $(BUILD)/hal/vga.o       \
+OBJ = $(BUILD)/kernel/entry.o     \
+      $(BUILD)/hal/vga.o           \
+      $(BUILD)/hal/isr_stub.o      \
+      $(BUILD)/kernel/idt.o        \
+      $(BUILD)/kernel/isr.o        \
       $(BUILD)/kernel/kernel.o
 
 .PHONY: all run clean
@@ -26,6 +29,9 @@ $(BUILD)/bootloader/boot.bin: bootloader/boot.asm | $(BUILD)/bootloader
 $(BUILD)/kernel/entry.o: kernel/entry.asm | $(BUILD)/kernel
 	$(NASM) -f elf32 $< -o $@
 
+$(BUILD)/hal/isr_stub.o: hal/isr_stub.asm | $(BUILD)/hal
+	$(NASM) -f elf32 $< -o $@
+
 $(BUILD)/hal/%.o: hal/%.c | $(BUILD)/hal
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -36,8 +42,7 @@ $(BUILD)/kernel.bin: $(OBJ) linker.ld
 	$(LD) $(LDFLAGS) $(OBJ) -o $@
 
 $(IMG): $(BUILD)/bootloader/boot.bin $(BUILD)/kernel.bin
-	cat $^ > $@
-	dd if=/dev/zero bs=512 count=2880 of=$(IMG) conv=notrunc 2>/dev/null
+	dd if=/dev/zero bs=512 count=2880 of=$(IMG) 2>/dev/null
 	dd if=$(BUILD)/bootloader/boot.bin of=$(IMG) conv=notrunc bs=512 seek=0 2>/dev/null
 	dd if=$(BUILD)/kernel.bin of=$(IMG) conv=notrunc bs=512 seek=1 2>/dev/null
 
