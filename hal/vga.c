@@ -1,4 +1,4 @@
-#include "../kernel/kernel.h"
+#include <kernel/kernel.h>
 
 #define VGA_BASE        ((volatile unsigned short *)0xB8000)
 #define VGA_COLS        80

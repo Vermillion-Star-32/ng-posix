@@ -1,4 +1,4 @@
-#include "idt.h"
+#include <kernel/idt.h>
 #include <stdint.h>
 
 #define IDT_ENTRIES 256

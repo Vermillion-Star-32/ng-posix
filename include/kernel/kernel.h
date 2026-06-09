@@ -1,20 +1,17 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
+#include <kernel/pic.h>
+#include <kernel/irq.h>
+#include <kernel/idt.h>
+#include <kernel/keyboard.h>
+
 void vga_clear(void);
 void vga_putchar(char c);
 void vga_print(const char *str);
 void vga_print_hex(unsigned int n);
 
 void idt_init(void);
-
-#include "idt.h"
 void isr_handler(registers_t *regs);
-
-#include "pic.h"
-
-#include "irq.h"
-
-#include "keyboard.h"
 
 #endif

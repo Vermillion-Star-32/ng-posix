@@ -1,6 +1,6 @@
-#include "../kernel/irq.h"
-#include "../kernel/pic.h"
-#include "../kernel/keyboard.h"
+#include <kernel/irq.h>
+#include <kernel/pic.h>
+#include <kernel/keyboard.h>
 
 #define KB_DATA_PORT  0x60
 #define KB_BUF_SIZE   256

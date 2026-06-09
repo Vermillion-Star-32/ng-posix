@@ -1,5 +1,5 @@
-#include "idt.h"
-#include "kernel.h"
+#include <kernel/idt.h>
+#include <kernel/kernel.h>
 
 static const char *exception_names[] = {
     "Division By Zero",                                     /* 0 */

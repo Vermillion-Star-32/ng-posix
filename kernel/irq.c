@@ -1,6 +1,6 @@
-#include "irq.h"
-#include "idt.h"
-#include "pic.h"
+#include <kernel/irq.h>
+#include <kernel/idt.h>
+#include <kernel/pic.h>
 
 extern void irq0(void);  extern void irq1(void);  extern void irq2(void);
 extern void irq3(void);  extern void irq4(void);  extern void irq5(void);
