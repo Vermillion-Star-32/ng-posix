@@ -1,78 +1,100 @@
 [BITS 16]
 [ORG 0x7C00]
 
-KERNEL_OFFSET  equ 0x8000
-KERNEL_SECTORS equ 32
-STACK_BASE     equ 0x7000
-E820_BUFFER    equ 0x9000
-CODE_SEG       equ 0x08
-DATA_SEG       equ 0x10
+; ============================== Constants ==============================
+KERNEL_LOAD_ADDR        equ 0x8000
+KERNEL_MAX_SECTORS      equ 32
+INITIAL_STACK_PTR       equ 0x7000
+E820_MEMORY_MAP_BUFFER  equ 0x9000
+GDT_CODE_SELECTOR       equ 0x08
+GDT_DATA_SELECTOR       equ 0x10
 
-; =============================================================================
-; Entry
-; =============================================================================
+; ============================== Entrypoint ==============================
+; Cpu Starts here (after bootloader loaded at 0x7C00)
+; ========================================================================
 start:
     cli
-    mov [boot_drive], dl
+    mov [boot_drive], dl ; Take note for disk reads later
+
+    ; Set data segments everything to 0
     xor ax, ax
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
+
+    ; Set stack segment to 0 point to safe memory area
     mov ss, ax
-    mov sp, STACK_BASE
+    mov sp, INITIAL_STACK_PTR
+
     cld
     jmp 0x0000:main
 
+; ============================== Main Call ===============================
+; Calls all of the different functions to init them
+; ========================================================================
 main:
-    sti
+    sti ; dk if need this here (To be checked later)
+
+    ; Refer to the respective functions
     call detect_memory
     call enable_a20
     call load_kernel
     call enter_pm
-    cli
+    
+    cli ; dk if need this here (To be checked later)
     hlt
 
-; =============================================================================
-; print16 — print null-terminated string at SI
-; =============================================================================
-print16:
-    pusha
-.l: lodsb
-    test al, al
-    jz .d
-    mov ah, 0x0E
-    int 0x10
-    jmp .l
-.d: popa
-    ret
-
-; =============================================================================
-; detect_memory — E820 map into E820_BUFFER, count at E820_BUFFER-2
-; =============================================================================
+; ============================ Create Mem Map ============================
+; detect_memory: Query the BIOS E820 memory map and store entries seq.
+;                into the E820_MEMORY_MAP_BUFFER. Think of it like a
+;                city map with distinct districts inside of it called
+;                entries which shows how hardware allocated the memory.
+;
+; Output:
+;   E820_MEMORY_MAP_BUFFER: Pointer to array of BIOS-provided physical 
+;                           memory region descriptors
+;   
+; ========================================================================
 detect_memory:
     pusha
-    mov di, E820_BUFFER
-    xor ebx, ebx
+    
+    ; Points to next free slot in buffer
+    mov di, E820_MEMORY_MAP_BUFFER
+    xor ebx, ebx ; Check if ebx is 0 for first e820 request
     xor bp, bp
-    mov edx, 0x534D4150
+    mov edx, 0x534D4150 ; Make sure of SMAP signature for every call
 .next:
+    ; Store entry
     mov eax, 0xE820
     mov ecx, 24
     int 0x15
+
+    ; Set carry flag for BIOS error, unsupp. func.
     jc .done
+
+    ; BIOS to return SMAP sig. in EAX
     cmp eax, 0x534D4150
     jne .done
+
+    ; To ignore only empty entries (ecx contains size of returned entry)
     test ecx, ecx
     jz .skip
+
+    ; For valid entry, advance to next 24-byte slot in buffer
     inc bp
     add di, 24
 .skip:
+    ; For when no more entries .done
     test ebx, ebx
     jz .done
+
+    ; If not go to next mem. map entry
     jmp .next
 .done:
-    mov [E820_BUFFER - 2], bp
+    ; Store total num. of entries before buffer
+    mov [E820_MEMORY_MAP_BUFFER - 2], bp
+    
     popa
     ret
 
@@ -119,6 +141,20 @@ enable_a20:
     ret
 
 ; =============================================================================
+; print16 — print null-terminated string at SI
+; =============================================================================
+print16:
+    pusha
+.l: lodsb
+    test al, al
+    jz .d
+    mov ah, 0x0E
+    int 0x10
+    jmp .l
+.d: popa
+    ret
+
+; =============================================================================
 ; load_kernel — LBA preferred, CHS fallback
 ; =============================================================================
 load_kernel:
@@ -134,8 +170,8 @@ load_kernel:
 .lba:
     mov byte [dap],      16
     mov byte [dap + 1],  0
-    mov word [dap + 2],  KERNEL_SECTORS
-    mov word [dap + 4],  KERNEL_OFFSET
+    mov word [dap + 2],  KERNEL_MAX_SECTORS
+    mov word [dap + 4],  KERNEL_LOAD_ADDR
     mov word [dap + 6],  0x0000
     mov dword [dap + 8], 1
     mov dword [dap + 12], 0
@@ -147,12 +183,12 @@ load_kernel:
     jmp .ok
 .chs:
     mov ah, 0x02
-    mov al, KERNEL_SECTORS
+    mov al, KERNEL_MAX_SECTORS
     mov ch, 0
     mov cl, 2
     mov dh, 0
     mov dl, [boot_drive]
-    mov bx, KERNEL_OFFSET
+    mov bx, KERNEL_LOAD_ADDR
     int 0x13
     jc  .err
 .ok:
@@ -173,11 +209,11 @@ enter_pm:
     mov eax, cr0
     or  eax, 1
     mov cr0, eax
-    jmp CODE_SEG:pm32
+    jmp GDT_CODE_SELECTOR:pm32
 
 [BITS 32]
 pm32:
-    mov ax, DATA_SEG
+    mov ax, GDT_DATA_SELECTOR
     mov ds, ax
     mov es, ax
     mov fs, ax
@@ -185,7 +221,7 @@ pm32:
     mov ss, ax
     mov ebp, 0x90000
     mov esp, ebp
-    jmp KERNEL_OFFSET
+    jmp KERNEL_LOAD_ADDR
 
 ; =============================================================================
 ; GDT

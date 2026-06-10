@@ -61,41 +61,6 @@ make clean    # remove build/ entirely
 
 ---
 
-## Boot sequence
-
-```
-BIOS
- └─ loads boot sector (512 bytes) at 0x7C00, jumps to it
-
-bootloader/boot.asm
- ├─ 1. CPU setup     — disable interrupts, save boot drive (DL),
- │                     zero segment registers, move stack to 0x7000,
- │                     set direction flag (cld), far jump to flush CS
- ├─ 2. detect_memory — INT 0x15 E820, builds memory map at 0x9000,
- │                     entry count stored at 0x8FFE
- ├─ 3. enable_a20    — BIOS INT 0x15 AX=0x2401 first,
- │                     keyboard controller (KBC) fallback
- ├─ 4. load_kernel   — LBA (INT 0x13 AH=0x42) preferred,
- │                     CHS (INT 0x13 AH=0x02) fallback,
- │                     loads 32 sectors into 0x8000
- └─ 5. enter_pm      — loads GDT (null + code + data descriptors),
-                        sets CR0.PE bit, far jumps to 32-bit code,
-                        sets up segment registers + stack at 0x90000,
-                        jumps to 0x8000
-
-kernel/entry.asm  (_start at 0x8000)
- ├─ zeroes BSS segment (bss_start..bss_end from linker script)
- └─ calls kernel_main()
-
-kernel/kernel.c
- ├─ vga_clear()
- ├─ prints banner
- ├─ idt_init()
- └─ hlt loop
-```
-
----
-
 ## Components
 
 ### bootloader/boot.asm
