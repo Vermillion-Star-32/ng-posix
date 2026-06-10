@@ -23,6 +23,7 @@ void kernel_main(void) {
     vga_print("Keyboard OK\n");
 
     vga_print("Ready. Type below:\n> ");
+    int prompt_end = vga_get_cursor();
 
     __asm__ volatile ("sti");
 
@@ -31,6 +32,10 @@ void kernel_main(void) {
         if (c) {
             if (c == '\r' || c == '\n') {
                 vga_print("\n> ");
+                prompt_end = vga_get_cursor();
+            } else if (c == '\b') {
+                if (vga_get_cursor() > prompt_end)
+                    vga_backspace();
             } else {
                 vga_putchar(c);
             }

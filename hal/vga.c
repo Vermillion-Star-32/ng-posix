@@ -7,6 +7,10 @@
 
 static int cursor = 0;
 
+int vga_get_cursor(void) {
+    return cursor;
+}
+
 void vga_clear(void) {
     for (int i = 0; i < VGA_COLS * VGA_ROWS; i++)
         VGA_BASE[i] = WHITE_ON_BLACK | ' ';
@@ -25,6 +29,13 @@ void vga_putchar(char c) {
 void vga_print(const char *str) {
     for (int i = 0; str[i] != '\0'; i++)
         vga_putchar(str[i]);
+}
+
+void vga_backspace(void) {
+    if (cursor > 0 && (cursor % VGA_COLS) != 0) {
+        cursor--;
+        VGA_BASE[cursor] = WHITE_ON_BLACK | ' ';
+    }
 }
 
 void vga_print_hex(unsigned int n) {
